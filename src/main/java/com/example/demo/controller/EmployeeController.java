@@ -36,7 +36,7 @@ public class EmployeeController {
 	/* can be used to Get a specific employee profile */
 	@RequestMapping("/employee/{id}")
 	@ResponseBody
-	public Optional<Employee> employee(@PathVariable("id") int id) {
+	public Employee employee(@PathVariable("id") int id) {
 		return empRepo.findById(id);
 	}
 	
@@ -57,7 +57,8 @@ public class EmployeeController {
 	/* ! the function needs to handle exception 
 	 * => a user that had some document send (foreign key in document) cannot be deleted */
 	@DeleteMapping("/employee/{id}")
-	public String deleteEmployee(@PathVariable("id") int id) {
+	public String deleteEmployee(@PathVariable("id") long id) {
+		
 		Employee emp = empRepo.getById(id);
 		empRepo.delete(emp);
 		return "deleted";
