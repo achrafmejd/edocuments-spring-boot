@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -35,6 +37,7 @@ import com.example.demo.model.Document;
 import com.example.demo.model.Employee;
 import com.example.demo.service.DocumentStorageService;
 
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 public class DocumentController {
 	@Autowired
@@ -51,8 +54,11 @@ public class DocumentController {
 	public List<Document> allDocuments(){
 		return docRepo.findAll();
 	}*/
+	
+	
 	@GetMapping("/documents")
-	public ResponseEntity<List<ResponseDocument>> getListFiles(){
+	public List<ResponseDocument> getListFiles(){
+		
 		List<ResponseDocument> files = storageService.getAllFiles().map(
 				dbFile -> {
 				      String fileDownloadUri = ServletUriComponentsBuilder
@@ -60,14 +66,21 @@ public class DocumentController {
 				          .path("/documents/")
 				          .path(String.valueOf(dbFile.getIdDoc()))
 				          .toUriString();
-				      return new ResponseDocument(
-				    		 dbFile.getDocName(),
-				    		 fileDownloadUri,
-				    		 dbFile.getType(),
-				    		 dbFile.getData().length);
+				      return new 	ResponseDocument(
+					    		 dbFile.getDocName(),
+					    		 fileDownloadUri,
+					    		 dbFile.getType(),
+					    		 dbFile.getData().length,
+					    		 dbFile.getEmployee().getFirstName(),
+					    		 dbFile.getEmployee().getLastName(),
+					    		 dbFile.getDate(),
+					    		 empRepo.findById(dbFile.getIdRecipient()).getLastName(),
+					    		 empRepo.findById(dbFile.getIdRecipient()).getFirstName()
+					    	);
 				})
 				.collect(Collectors.toList());
-		return ResponseEntity.status(HttpStatus.OK).body(files);
+		return files;
+		
 	}
 	
 	/* Get A specific document by id */
@@ -82,17 +95,66 @@ public class DocumentController {
 	@RequestMapping("document-sent/{id}")
 	/* The id here represents the user */
 	@ResponseBody
-	public List<Document> documentSentById(@PathVariable("id") int id){
-		return docRepo.findAllByEmployee(id);
+	public List<ResponseDocument> documentSentById(@PathVariable("id") int id){
+		List<ResponseDocument> files = (List<ResponseDocument>) docRepo.findAllByEmployee(id).stream().map(
+				dbFile -> {
+					String fileDownloadUri = ServletUriComponentsBuilder
+					          .fromCurrentContextPath()
+					          .path("/documents/")
+					          .path(String.valueOf(dbFile.getIdDoc()))
+					          .toUriString();
+					 return new 	ResponseDocument(
+				    		 dbFile.getDocName(),
+				    		 fileDownloadUri,
+				    		 dbFile.getType(),
+				    		 dbFile.getData().length,
+				    		 dbFile.getEmployee().getFirstName(),
+				    		 dbFile.getEmployee().getLastName(),
+				    		 dbFile.getDate(),
+				    		 empRepo.findById(dbFile.getIdRecipient()).getLastName(),
+				    		 empRepo.findById(dbFile.getIdRecipient()).getFirstName()
+				    	);
+				}
+				).collect(Collectors.toList());
+		return files;
+		
 	}
+	/* public List<Document> documentSentById(@PathVariable("id") int id){
+		return docRepo.findAllByEmployee(id);
+	}*/
+	
 	
 	/* Get received document based on id (can be changed ) */
 	@RequestMapping("document-received/{id}")
 	/* The id here represents the user */
 	@ResponseBody
-	public List<Document> documentReceivedById(@PathVariable("id") int id){
-		return docRepo.findAllByIdRecipient(id);
+	public List<ResponseDocument> documentReceivedById(@PathVariable("id") int id){
+		List<ResponseDocument> files = (List<ResponseDocument>) docRepo.findAllByIdRecipient(id).stream().map(
+				dbFile -> {
+					String fileDownloadUri = ServletUriComponentsBuilder
+					          .fromCurrentContextPath()
+					          .path("/documents/")
+					          .path(String.valueOf(dbFile.getIdDoc()))
+					          .toUriString();
+					 return new 	ResponseDocument(
+				    		 dbFile.getDocName(),
+				    		 fileDownloadUri,
+				    		 dbFile.getType(),
+				    		 dbFile.getData().length,
+				    		 dbFile.getEmployee().getFirstName(),
+				    		 dbFile.getEmployee().getLastName(),
+				    		 dbFile.getDate(),
+				    		 empRepo.findById(dbFile.getIdRecipient()).getLastName(),
+				    		 empRepo.findById(dbFile.getIdRecipient()).getFirstName()
+				    	);
+				}
+				).collect(Collectors.toList());
+		return files;
+		
 	}
+	/*public List<Document> documentReceivedById(@PathVariable("id") int id){
+		return docRepo.findAllByIdRecipient(id);
+	}*/
 	
 	/* Send a document to an employee */
 	@PostMapping(value="/sendDocument", consumes={MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
