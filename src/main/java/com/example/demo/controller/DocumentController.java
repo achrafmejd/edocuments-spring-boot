@@ -9,6 +9,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -188,20 +190,22 @@ public class DocumentController {
 	}
 	
 	/* Delete a document */
-	/*@DeleteMapping("/document/{id}")
+	@RequestMapping(value = "/document/{id}", method = RequestMethod.DELETE)
 	public String deleteDocument(@PathVariable("id") int id) {
-		Document doc = docRepo.getById(id);
-		docRepo.delete(doc);
+		/*Document doc = docRepo.getById(id);*/
+		docRepo.delete(docRepo.findById(id));
+		/*docRepo.delete(doc);*/
 		return "deleted";
-	}*/
+	}
 	
 	
 	@GetMapping("/documents/{id}")
-	public ResponseEntity<byte[]> getFile(@PathVariable long id) {
+	public ResponseEntity<ByteArrayResource> getFile(@PathVariable long id) {
 	  Document fileDB = storageService.getFile(id);
 	  return ResponseEntity.ok()
-	        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileDB.getDocName() + "\"")
-	        .body(fileDB.getData());
+              .contentType(MediaType.parseMediaType(fileDB.getType()))
+              .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileDB.getDocName() + "\"")
+              .body(new ByteArrayResource(fileDB.getData()));
 	}
 	  
 }

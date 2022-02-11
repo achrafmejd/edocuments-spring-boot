@@ -15,6 +15,8 @@ public interface DocumentRepo extends JpaRepository<Document, Long> {
 	@Query("from Document where employee_id_emp = ?1")
 	List<Document> findAllByEmployee(int id);
 	
+	Document findById(long id);
+	
 	
  
 }
